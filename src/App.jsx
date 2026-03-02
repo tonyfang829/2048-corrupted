@@ -441,6 +441,7 @@ export default function App() {
           padding: "clamp(6px, 2vw, 12px)",
           border: "1px solid rgba(0,255,136,0.15)",
           boxShadow: "0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3)",
+          touchAction: "none",
         }}
       >
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridSize}, 1fr)`, gridTemplateRows: `repeat(${gridSize}, 1fr)`, gap: "clamp(4px, 1.5vw, 8px)", width: "100%", height: "100%" }}>
