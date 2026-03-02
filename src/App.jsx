@@ -16,6 +16,17 @@ const TRANSLATIONS = {
     newGameBtn: "NEW GAME", keepGoing: "KEEP GOING",
     lvl: "LVL", neg: "NEG", grid: "GRID",
     hint: "ARROW KEYS / SWIPE TO PLAY",
+    introBtn: "?",
+    closeBtn: "CLOSE",
+    introParagraphs: [
+      "When order collapses, numbers fall into the abyss.",
+      "This is not the 2048 you remember. No gentle openings. No leisurely strategy. The board has been corrupted by an unknown force — every new tile may arrive wearing a minus sign. They are destruction. They are also salvation.",
+      "In the 3×3 prison, light and dark take turns like two sides of a coin. Positives collide and grow savage. Positive meets negative — annihilation. Think negatives are a curse? Wrong. In a desperate board, a single cancellation is your only breath of air.",
+      "The abyss evolves. Cross the 500, 1000, and 3000 thresholds and larger, wilder numbers will be summoned from the void. The board grows crowded. Unpredictable.",
+      "But you are not unarmed. Every merge crystallizes into gold — your weapon against chaos. In the shop: purify the corruption or embrace the madness. Boost your yields, expand the grid, or detonate the board and erase three tiles from existence. Sometimes fate is kind — a golden tile descends in silence. Every merge it touches yields double gold.",
+      "Here, every move is a gamble. Every swipe may be your last — or your comeback.",
+      "Swipe. Embrace the chaos. Build your 2048 from the ruins of negatives.",
+    ],
     shopItems: {
       inc_neg:      { name: "Chaos+",   desc: "Increase negative odds by 5%" },
       dec_neg:      { name: "Purify",   desc: "Decrease negative odds by 5%" },
@@ -37,6 +48,17 @@ const TRANSLATIONS = {
     newGameBtn: "新游戏", keepGoing: "继续",
     lvl: "等级", neg: "负片", grid: "棋盘",
     hint: "方向键 / 滑动 操作",
+    introBtn: "介绍",
+    closeBtn: "关闭",
+    introParagraphs: [
+      "当秩序崩塌，数字堕入深渊。",
+      "这不是你记忆中的 2048。这里没有温柔的开局，没有从容的推演。棋盘被未知力量侵蚀，每一个新生的数字都可能带着负号降临——它们是毁灭，也是救赎。",
+      "3×3 的囚笼里，光与暗以命运硬币的正反面轮番登场。正数相撞，野蛮生长；正负相遇，灰飞烟灭。你以为负数是诅咒？不，它们是你在绝境中唯一的解药。当棋盘被数字填满、窒息逼近的瞬间，一次精准的湮灭就是重新呼吸的机会。",
+      "而这座深渊并非一成不变——它在进化。当你的分数越过 500、1000、3000 的门槛，更庞大、更狂暴的数字将从虚空中被召唤而出。棋盘会变得越来越拥挤，越来越不可预测。",
+      "但你并非赤手空拳。每一次合并都会凝结成金币，而金币是你对抗混沌的武器。在商店中，你可以净化负数的侵蚀，也可以主动拥抱疯狂；你可以炼金提升收益，扩张领地，甚至引爆棋盘、将三块数字化为虚无。偶尔，命运会眷顾你——一块散发着金色光芒的方块悄然降临，它所参与的每一次合并，都将带来双倍的金币回报。",
+      "在这里，每一步都是豪赌，每一次滑动都可能是翻盘或终局。",
+      "滑动屏幕。拥抱混沌。在负数的废墟中，拼出你的 2048。",
+    ],
     shopItems: {
       inc_neg:      { name: "混沌+", desc: "负数概率增加 5%" },
       dec_neg:      { name: "净化",  desc: "负数概率降低 5%" },
@@ -259,6 +281,7 @@ export default function App() {
   const [won, setWon] = useState(false);
   const [keepPlaying, setKeepPlaying] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
   const [purchaseCounts, setPurchaseCounts] = useState({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
   const [flashGold, setFlashGold] = useState(false);
   const touchStart = useRef(null);
@@ -398,6 +421,7 @@ export default function App() {
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <SmallBtn label={t.langToggle} onClick={() => setLang(l => l === "en" ? "zh" : "en")} color="#9966ff" />
+          <SmallBtn label={t.introBtn} onClick={() => setIntroOpen(true)} color="#00ccff" />
           <SmallBtn label={t.shop} onClick={() => setShopOpen(!shopOpen)} color="#ffcc00" active={shopOpen} />
           <SmallBtn label={t.newGame} onClick={resetGame} color="#ff4444" />
         </div>
@@ -573,6 +597,69 @@ export default function App() {
       <div style={{ marginTop: 8, color: "rgba(255,255,255,0.2)", fontSize: 10, letterSpacing: 2, textAlign: "center", lineHeight: 1.6 }}>
         {t.hint}
       </div>
+
+      {/* Intro modal */}
+      {introOpen && (
+        <div
+          onClick={() => setIntroOpen(false)}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.85)", zIndex: 300,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px", backdropFilter: "blur(4px)",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#0a0a12",
+              border: "1px solid rgba(0,255,136,0.2)",
+              borderRadius: 16,
+              padding: "28px 24px",
+              maxWidth: 480, width: "100%",
+              maxHeight: "80vh", overflowY: "auto",
+              boxShadow: "0 0 60px rgba(0,255,136,0.08), 0 0 120px rgba(0,0,0,0.8)",
+              position: "relative",
+            }}
+          >
+            <button
+              onClick={() => setIntroOpen(false)}
+              style={{
+                position: "absolute", top: 14, right: 16,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.4)",
+                padding: "4px 12px", borderRadius: 6,
+                cursor: "pointer", fontFamily: "inherit",
+                fontSize: 10, letterSpacing: 2,
+              }}
+            >{t.closeBtn}</button>
+
+            {t.introParagraphs.map((para, i) => (
+              <p key={i} style={{
+                color: i === 0
+                  ? "#00ff88"
+                  : i === t.introParagraphs.length - 1
+                    ? "#ffcc00"
+                    : "rgba(255,255,255,0.65)",
+                fontSize: i === 0
+                  ? 15
+                  : i === t.introParagraphs.length - 1
+                    ? 13
+                    : 12,
+                fontWeight: i === 0 || i === t.introParagraphs.length - 1 ? 700 : 400,
+                lineHeight: 1.8,
+                letterSpacing: i === 0 ? 2 : 0.5,
+                marginBottom: i < t.introParagraphs.length - 1 ? 14 : 0,
+                textShadow: i === 0 ? "0 0 20px rgba(0,255,136,0.3)" : "none",
+              }}>
+                {para}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
