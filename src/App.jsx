@@ -413,13 +413,13 @@ export default function App() {
       </div>
 
       {/* Score / Gold bar */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10, width: "min(95vw, 440px)", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10, width: "min(95vw, 440px)", justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}>
+        <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
           <ScoreBox label={t.score} value={score} color="#00ff88" />
           <ScoreBox label={t.best} value={bestScore} color="#00ccff" />
           <ScoreBox label={t.gold} value={gold} color="#ffcc00" flash={flashGold} />
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
           <SmallBtn label={t.langToggle} onClick={() => setLang(l => l === "en" ? "zh" : "en")} color="#9966ff" />
           <SmallBtn label={t.introBtn} onClick={() => setIntroOpen(true)} color="#00ccff" />
           <SmallBtn label={t.shop} onClick={() => setShopOpen(!shopOpen)} color="#ffcc00" active={shopOpen} />
@@ -685,9 +685,9 @@ export default function App() {
 
 function ScoreBox({ label, value, color, flash }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${color}22`, borderRadius: 8, padding: "4px 12px", textAlign: "center", minWidth: 70 }}>
-      <div style={{ fontSize: 8, color: `${color}88`, letterSpacing: 3, marginBottom: 1 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color, textShadow: `0 0 10px ${color}44`, animation: flash ? "goldFlash 0.4s ease-out" : "none" }}>{value}</div>
+    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${color}22`, borderRadius: 8, padding: "3px 8px", textAlign: "center", minWidth: 55 }}>
+      <div style={{ fontSize: 7, color: `${color}88`, letterSpacing: 2, marginBottom: 1 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color, textShadow: `0 0 10px ${color}44`, animation: flash ? "goldFlash 0.4s ease-out" : "none" }}>{value}</div>
     </div>
   );
 }
@@ -697,8 +697,8 @@ function SmallBtn({ label, onClick, color, active }) {
     <button onClick={onClick} style={{
       background: active ? `${color}20` : `${color}10`,
       border: `1px solid ${active ? `${color}55` : `${color}30`}`,
-      color, padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-      fontFamily: "inherit", fontSize: 11, letterSpacing: 2,
+      color, padding: "5px 8px", borderRadius: 6, cursor: "pointer",
+      fontFamily: "inherit", fontSize: 10, letterSpacing: 1,
       textTransform: "uppercase", transition: "all 0.2s",
       boxShadow: active ? `0 0 12px ${color}22` : "none",
     }}>{label}</button>
