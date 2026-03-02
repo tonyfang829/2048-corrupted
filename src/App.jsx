@@ -200,8 +200,6 @@ const SHOP_ITEMS = [
   { id: "destroy", name: "Purge", desc: "Destroy 3 random tiles (consumable)", icon: "💥", costs: [100, 200, 400], maxTier: Infinity, repeatable: true, color: "#ff6600" },
 ];
 
-const RANK_COLORS = ["#ffcc00", "#aaaaaa", "#cc6633", "#00ccff", "#9933ff", "#00ff88", "#ff6600", "#ff33cc", "#33cccc", "#6666ff"];
-
 export default function App() {
   const [gridSize, setGridSize] = useState(3);
   const [negChance, setNegChance] = useState(0.5);
@@ -217,55 +215,7 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false);
   const [purchaseCounts, setPurchaseCounts] = useState({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
   const [flashGold, setFlashGold] = useState(false);
-
-  // Leaderboard state
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [nameInput, setNameInput] = useState("");
-  const [scoreSubmitted, setScoreSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitRank, setSubmitRank] = useState(null);
-  const [lbLoading, setLbLoading] = useState(false);
-
   const touchStart = useRef(null);
-  const nameInputRef = useRef(null);
-
-  const fetchLeaderboard = async () => {
-    setLbLoading(true);
-    try {
-      const res = await fetch("/api/scores");
-      if (res.ok) setLeaderboard(await res.json());
-    } catch (_) {}
-    setLbLoading(false);
-  };
-
-  useEffect(() => { fetchLeaderboard(); }, []);
-
-  useEffect(() => {
-    if ((gameOver || won) && !keepPlaying) {
-      fetchLeaderboard();
-      setTimeout(() => nameInputRef.current?.focus(), 300);
-    }
-  }, [gameOver, won]);
-
-  const submitScore = async () => {
-    if (!nameInput.trim() || isSubmitting || score === 0) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch("/api/scores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nameInput.trim(), score, gold }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.scores) setLeaderboard(data.scores);
-        if (data.rank) setSubmitRank(data.rank);
-        setScoreSubmitted(true);
-      }
-    } catch (_) {}
-    setIsSubmitting(false);
-  };
 
   const handleMove = useCallback((direction) => {
     if (gameOver || (won && !keepPlaying)) return;
@@ -329,9 +279,6 @@ export default function App() {
     setKeepPlaying(false);
     setShopOpen(false);
     setPurchaseCounts({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
-    setScoreSubmitted(false);
-    setNameInput("");
-    setSubmitRank(null);
   };
 
   const buyItem = (item) => {
@@ -374,13 +321,6 @@ export default function App() {
     return { canBuy: gold >= cost, cost, label: `${cost}g` };
   };
 
-  const panelStyle = {
-    width: "min(95vw, 440px)", marginBottom: 10,
-    background: "rgba(15,15,25,0.95)", borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.08)", padding: "12px",
-    animation: "fadeIn 0.2s ease-out",
-  };
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -407,8 +347,7 @@ export default function App() {
           <ScoreBox label="GOLD" value={gold} color="#ffcc00" flash={flashGold} />
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <SmallBtn label="SCORES" onClick={() => { setShowLeaderboard(v => !v); setShopOpen(false); fetchLeaderboard(); }} color="#cc33ff" active={showLeaderboard} />
-          <SmallBtn label="SHOP" onClick={() => { setShopOpen(v => !v); setShowLeaderboard(false); }} color="#ffcc00" active={shopOpen} />
+          <SmallBtn label="SHOP" onClick={() => setShopOpen(!shopOpen)} color="#ffcc00" active={shopOpen} />
           <SmallBtn label="NEW" onClick={resetGame} color="#ff4444" />
         </div>
       </div>
@@ -426,59 +365,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Leaderboard panel */}
-      {showLeaderboard && (
-        <div style={{ ...panelStyle, border: "1px solid rgba(204,51,255,0.2)" }}>
-          <div style={{ fontSize: 11, color: "#cc33ff", letterSpacing: 3, marginBottom: 10, textAlign: "center", textTransform: "uppercase" }}>🏆 Leaderboard</div>
-          {lbLoading ? (
-            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11, padding: "12px 0" }}>LOADING...</div>
-          ) : leaderboard.length === 0 ? (
-            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11, padding: "12px 0" }}>NO SCORES YET — BE THE FIRST</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <div style={{ display: "flex", gap: 8, padding: "0 6px 4px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: 2 }}>
-                <span style={{ width: 24 }}>#</span>
-                <span style={{ flex: 1 }}>NAME</span>
-                <span style={{ width: 60, textAlign: "right" }}>SCORE</span>
-                <span style={{ width: 45, textAlign: "right" }}>GOLD</span>
-                <span style={{ width: 70, textAlign: "right" }}>DATE</span>
-              </div>
-              {leaderboard.map((entry, i) => {
-                const rankColor = RANK_COLORS[i] || "rgba(255,255,255,0.4)";
-                const isTop3 = i < 3;
-                return (
-                  <div key={i} style={{
-                    display: "flex", gap: 8, alignItems: "center",
-                    padding: "5px 6px", borderRadius: 6,
-                    background: isTop3 ? `${rankColor}08` : "transparent",
-                    border: isTop3 ? `1px solid ${rankColor}18` : "1px solid transparent",
-                  }}>
-                    <span style={{ width: 24, fontSize: isTop3 ? 13 : 11, fontWeight: 700, color: rankColor }}>
-                      {i === 0 ? "⚡" : i === 1 ? "◈" : i === 2 ? "◇" : `${i + 1}`}
-                    </span>
-                    <span style={{ flex: 1, fontSize: 11, color: isTop3 ? rankColor : "rgba(255,255,255,0.7)", fontWeight: isTop3 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {entry.name}
-                    </span>
-                    <span style={{ width: 60, textAlign: "right", fontSize: 12, fontWeight: 700, color: isTop3 ? rankColor : "rgba(255,255,255,0.6)" }}>
-                      {entry.score.toLocaleString()}
-                    </span>
-                    <span style={{ width: 45, textAlign: "right", fontSize: 10, color: "#ffcc0066" }}>
-                      {entry.gold.toLocaleString()}
-                    </span>
-                    <span style={{ width: 70, textAlign: "right", fontSize: 9, color: "rgba(255,255,255,0.2)" }}>
-                      {entry.date}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Shop panel */}
       {shopOpen && (
-        <div style={{ ...panelStyle, border: "1px solid rgba(255,204,0,0.15)" }}>
+        <div style={{
+          width: "min(95vw, 440px)", marginBottom: 10,
+          background: "rgba(15,15,25,0.95)", borderRadius: 12,
+          border: "1px solid rgba(255,204,0,0.15)", padding: "12px",
+          animation: "fadeIn 0.2s ease-out",
+        }}>
           <div style={{ fontSize: 11, color: "#ffcc00", letterSpacing: 3, marginBottom: 10, textAlign: "center", textTransform: "uppercase" }}>⚙ Shop</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {SHOP_ITEMS.map(item => {
@@ -594,75 +488,19 @@ export default function App() {
           })}
         </div>
 
-        {/* Game over / win overlay */}
         {(gameOver || won) && (
           <div style={{
             position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-            background: gameOver ? "rgba(10,0,0,0.88)" : "rgba(0,10,0,0.88)",
+            background: gameOver ? "rgba(10,0,0,0.85)" : "rgba(0,10,0,0.85)",
             borderRadius: 12, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 10,
-            animation: "fadeIn 0.3s ease-out", padding: "16px",
+            alignItems: "center", justifyContent: "center", gap: 12,
+            animation: "fadeIn 0.3s ease-out",
           }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: gameOver ? "#ff4444" : "#00ff88", textShadow: `0 0 30px ${gameOver ? "rgba(255,68,68,0.6)" : "rgba(0,255,136,0.6)"}`, letterSpacing: 4 }}>
               {gameOver ? "GAME OVER" : "YOU WIN!"}
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: 2 }}>
-              SCORE: {score.toLocaleString()} · GOLD: {gold.toLocaleString()}
-            </div>
-
-            {/* Score submission */}
-            {score > 0 && (
-              <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                {!scoreSubmitted ? (
-                  <>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 2 }}>SAVE YOUR SCORE</div>
-                    <div style={{ display: "flex", gap: 6, width: "100%", maxWidth: 280 }}>
-                      <input
-                        ref={nameInputRef}
-                        value={nameInput}
-                        onChange={e => setNameInput(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && submitScore()}
-                        placeholder="YOUR NAME"
-                        maxLength={20}
-                        style={{
-                          flex: 1, background: "rgba(255,255,255,0.05)",
-                          border: `1px solid ${gameOver ? "rgba(255,68,68,0.3)" : "rgba(0,255,136,0.3)"}`,
-                          color: gameOver ? "#ff8888" : "#00ff88",
-                          padding: "7px 10px", borderRadius: 6,
-                          fontFamily: "inherit", fontSize: 11, letterSpacing: 2,
-                          outline: "none",
-                        }}
-                      />
-                      <button
-                        onClick={submitScore}
-                        disabled={isSubmitting || !nameInput.trim()}
-                        style={{
-                          background: isSubmitting || !nameInput.trim() ? "rgba(255,255,255,0.03)" : gameOver ? "rgba(255,68,68,0.15)" : "rgba(0,255,136,0.15)",
-                          border: `1px solid ${isSubmitting || !nameInput.trim() ? "rgba(255,255,255,0.08)" : gameOver ? "rgba(255,68,68,0.4)" : "rgba(0,255,136,0.4)"}`,
-                          color: isSubmitting || !nameInput.trim() ? "rgba(255,255,255,0.25)" : gameOver ? "#ff4444" : "#00ff88",
-                          padding: "7px 14px", borderRadius: 6,
-                          cursor: isSubmitting || !nameInput.trim() ? "default" : "pointer",
-                          fontFamily: "inherit", fontSize: 11, fontWeight: 700, letterSpacing: 1,
-                          whiteSpace: "nowrap", transition: "all 0.2s",
-                        }}
-                      >
-                        {isSubmitting ? "..." : "SUBMIT"}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{
-                    padding: "8px 20px", borderRadius: 8,
-                    background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.2)",
-                    fontSize: 12, color: "#00ff88", letterSpacing: 2, textAlign: "center",
-                  }}>
-                    ✓ SAVED{submitRank ? ` — RANK #${submitRank}` : ""}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10, marginTop: 2 }}>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: 2 }}>SCORE: {score} · GOLD: {gold}</div>
+            <div style={{ display: "flex", gap: 10 }}>
               <OverlayButton label="NEW GAME" onClick={resetGame} color={gameOver ? "#ff4444" : "#00ff88"} />
               {won && <OverlayButton label="KEEP GOING" onClick={() => { setKeepPlaying(true); setWon(false); }} color="#00ccff" />}
             </div>
@@ -700,8 +538,6 @@ export default function App() {
         @keyframes glitch { 0%, 90%, 100% { opacity: 1; transform: translateX(0); } 92% { opacity: 0.8; transform: translateX(-2px); } 94% { opacity: 0.6; transform: translateX(2px); } 96% { opacity: 0.8; transform: translateX(-1px); } 98% { opacity: 1; transform: translateX(1px); } }
         @keyframes goldFlash { 0% { text-shadow: 0 0 20px rgba(255,204,0,0.8); } 100% { text-shadow: 0 0 10px rgba(255,204,0,0.3); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        input::placeholder { color: rgba(255,255,255,0.2); }
-        input:focus { box-shadow: 0 0 0 1px rgba(0,255,136,0.2); }
       `}</style>
     </div>
   );
@@ -721,8 +557,8 @@ function SmallBtn({ label, onClick, color, active }) {
     <button onClick={onClick} style={{
       background: active ? `${color}20` : `${color}10`,
       border: `1px solid ${active ? `${color}55` : `${color}30`}`,
-      color, padding: "6px 10px", borderRadius: 6, cursor: "pointer",
-      fontFamily: "inherit", fontSize: 10, letterSpacing: 2,
+      color, padding: "6px 12px", borderRadius: 6, cursor: "pointer",
+      fontFamily: "inherit", fontSize: 11, letterSpacing: 2,
       textTransform: "uppercase", transition: "all 0.2s",
       boxShadow: active ? `0 0 12px ${color}22` : "none",
     }}>{label}</button>
