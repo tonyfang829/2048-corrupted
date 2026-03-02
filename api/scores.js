@@ -1,5 +1,6 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
+const kv = Redis.fromEnv();
 const SCORES_KEY = 'leaderboard_scores';
 const MAX_STORED = 100;
 const MAX_RETURNED = 10;
