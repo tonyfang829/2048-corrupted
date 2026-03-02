@@ -336,7 +336,6 @@ export default function App() {
       {/* Title */}
       <div style={{ textAlign: "center", marginBottom: 10 }}>
         <h1 style={{ fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 900, color: "#00ff88", textShadow: "0 0 30px rgba(0,255,136,0.5)", margin: 0, letterSpacing: 4, lineHeight: 1, transform: "rotate(180deg)" }}>-2048</h1>
-        <div style={{ fontSize: "clamp(9px, 1.8vw, 12px)", color: "#ff4444", textShadow: "0 0 10px rgba(255,68,68,0.5)", letterSpacing: 6, textTransform: "uppercase", marginTop: 2, animation: "glitch 3s infinite" }}>⚠ corrupted ⚠</div>
       </div>
 
       {/* Score / Gold bar */}
