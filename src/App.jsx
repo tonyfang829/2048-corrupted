@@ -27,6 +27,52 @@ const TRANSLATIONS = {
       "Here, every move is a gamble. Every swipe may be your last — or your comeback.",
       "Swipe. Embrace the chaos. Build your 2048 from the ruins of negatives.",
     ],
+    storyTab: "STORY",
+    guideTab: "GUIDE",
+    tutorial: [
+      {
+        icon: "🏆",
+        title: "GOAL",
+        body: "Merge tiles until you create a 2048 tile. Matching numbers combine into their sum.",
+        visual: { type: "merge", a: 1024, b: 1024, result: 2048 },
+      },
+      {
+        icon: "👆",
+        title: "CONTROLS",
+        body: "Swipe in any direction (or use arrow keys). ALL tiles slide at once toward that edge.",
+        visual: null,
+      },
+      {
+        icon: "✦",
+        title: "POSITIVE MERGE",
+        body: "Two matching positives combine and score. The result equals your score gained.",
+        visual: { type: "merge", a: 2, b: 2, result: 4 },
+      },
+      {
+        icon: "⚡",
+        title: "CANCELLATION",
+        body: "A positive meets its negative twin — both vanish. This clears space when the board is full.",
+        visual: { type: "cancel", a: 4, b: -4 },
+      },
+      {
+        icon: "☢",
+        title: "NEGATIVE TILES",
+        body: "Two negatives also merge and double. They clog the board — use cancellation to clear them.",
+        visual: { type: "merge", a: -2, b: -2, result: -4 },
+      },
+      {
+        icon: "👑",
+        title: "GOLDEN TILES",
+        body: "Rare golden tiles (×2 tag) give double gold on every merge they touch. Protect them.",
+        visual: { type: "golden" },
+      },
+      {
+        icon: "⚙",
+        title: "SHOP",
+        body: "Every merge earns gold. Spend it to purify negatives, boost gold, expand the board, or detonate tiles.",
+        visual: null,
+      },
+    ],
     shopItems: {
       inc_neg:      { name: "Chaos+",   desc: "Increase negative odds by 5%" },
       dec_neg:      { name: "Purify",   desc: "Decrease negative odds by 5%" },
@@ -58,6 +104,52 @@ const TRANSLATIONS = {
       "但你并非赤手空拳。每一次合并都会凝结成金币，而金币是你对抗混沌的武器。在商店中，你可以净化负数的侵蚀，也可以主动拥抱疯狂；你可以炼金提升收益，扩张领地，甚至引爆棋盘、将三块数字化为虚无。偶尔，命运会眷顾你——一块散发着金色光芒的方块悄然降临，它所参与的每一次合并，都将带来双倍的金币回报。",
       "在这里，每一步都是豪赌，每一次滑动都可能是翻盘或终局。",
       "滑动屏幕。拥抱混沌。在负数的废墟中，拼出你的 2048。",
+    ],
+    storyTab: "故事",
+    guideTab: "教学",
+    tutorial: [
+      {
+        icon: "🏆",
+        title: "目标",
+        body: "合并数字方块，直到出现 2048 方块即获胜。相同的数字相遇时会合并成它们的总和。",
+        visual: { type: "merge", a: 1024, b: 1024, result: 2048 },
+      },
+      {
+        icon: "👆",
+        title: "操作方式",
+        body: "向任意方向滑动（或使用方向键），所有方块会同时向该方向滑动到底。",
+        visual: null,
+      },
+      {
+        icon: "✦",
+        title: "正数合并",
+        body: "两个相同的正数相遇后合并，合并结果即为获得的得分。",
+        visual: { type: "merge", a: 2, b: 2, result: 4 },
+      },
+      {
+        icon: "⚡",
+        title: "湮灭",
+        body: "正数遇到大小相同的负数时，两者同时消失。棋盘快满时，这是你唯一的出路。",
+        visual: { type: "cancel", a: 4, b: -4 },
+      },
+      {
+        icon: "☢",
+        title: "负数方块",
+        body: "两个相同的负数也会合并并翻倍。负数会占据空间，要靠湮灭来清除它们。",
+        visual: { type: "merge", a: -2, b: -2, result: -4 },
+      },
+      {
+        icon: "👑",
+        title: "金色方块",
+        body: "稀有的金色方块带有 ×2 标记。它参与的每次合并都能获得双倍金币，好好保护它。",
+        visual: { type: "golden" },
+      },
+      {
+        icon: "⚙",
+        title: "商店",
+        body: "每次合并赚取金币。在商店花费金币，可净化负数、提升金币、扩大棋盘或引爆方块。",
+        visual: null,
+      },
     ],
     shopItems: {
       inc_neg:      { name: "混沌+", desc: "负数概率增加 5%" },
@@ -282,6 +374,7 @@ export default function App() {
   const [keepPlaying, setKeepPlaying] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [introOpen, setIntroOpen] = useState(false);
+  const [introTab, setIntroTab] = useState("story");
   const [purchaseCounts, setPurchaseCounts] = useState({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
   const [flashGold, setFlashGold] = useState(false);
   const touchStart = useRef(null);
@@ -598,7 +691,7 @@ export default function App() {
         {t.hint}
       </div>
 
-      {/* Intro modal */}
+      {/* Intro / Guide modal */}
       {introOpen && (
         <div
           onClick={() => setIntroOpen(false)}
@@ -616,47 +709,74 @@ export default function App() {
               background: "#0a0a12",
               border: "1px solid rgba(0,255,136,0.2)",
               borderRadius: 16,
-              padding: "28px 24px",
+              padding: "20px 20px 24px",
               maxWidth: 480, width: "100%",
               maxHeight: "80vh", overflowY: "auto",
               boxShadow: "0 0 60px rgba(0,255,136,0.08), 0 0 120px rgba(0,0,0,0.8)",
-              position: "relative",
             }}
           >
-            <button
-              onClick={() => setIntroOpen(false)}
-              style={{
-                position: "absolute", top: 14, right: 16,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.4)",
-                padding: "4px 12px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit",
-                fontSize: 10, letterSpacing: 2,
-              }}
-            >{t.closeBtn}</button>
+            {/* Tab row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              {[{ key: "story", label: t.storyTab }, { key: "guide", label: t.guideTab }].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setIntroTab(tab.key)}
+                  style={{
+                    background: introTab === tab.key ? "rgba(0,255,136,0.12)" : "transparent",
+                    border: `1px solid ${introTab === tab.key ? "rgba(0,255,136,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    color: introTab === tab.key ? "#00ff88" : "rgba(255,255,255,0.35)",
+                    padding: "5px 14px", borderRadius: 6,
+                    cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 10, letterSpacing: 2, textTransform: "uppercase",
+                    transition: "all 0.2s",
+                  }}
+                >{tab.label}</button>
+              ))}
+              <button
+                onClick={() => setIntroOpen(false)}
+                style={{
+                  marginLeft: "auto",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.4)",
+                  padding: "5px 12px", borderRadius: 6,
+                  cursor: "pointer", fontFamily: "inherit",
+                  fontSize: 10, letterSpacing: 2,
+                }}
+              >{t.closeBtn}</button>
+            </div>
 
-            {t.introParagraphs.map((para, i) => (
+            {/* Story tab */}
+            {introTab === "story" && t.introParagraphs.map((para, i) => (
               <p key={i} style={{
-                color: i === 0
-                  ? "#00ff88"
-                  : i === t.introParagraphs.length - 1
-                    ? "#ffcc00"
-                    : "rgba(255,255,255,0.65)",
-                fontSize: i === 0
-                  ? 15
-                  : i === t.introParagraphs.length - 1
-                    ? 13
-                    : 12,
+                color: i === 0 ? "#00ff88" : i === t.introParagraphs.length - 1 ? "#ffcc00" : "rgba(255,255,255,0.65)",
+                fontSize: i === 0 ? 15 : i === t.introParagraphs.length - 1 ? 13 : 12,
                 fontWeight: i === 0 || i === t.introParagraphs.length - 1 ? 700 : 400,
-                lineHeight: 1.8,
-                letterSpacing: i === 0 ? 2 : 0.5,
+                lineHeight: 1.8, letterSpacing: i === 0 ? 2 : 0.5,
                 marginBottom: i < t.introParagraphs.length - 1 ? 14 : 0,
                 textShadow: i === 0 ? "0 0 20px rgba(0,255,136,0.3)" : "none",
-              }}>
-                {para}
-              </p>
+              }}>{para}</p>
             ))}
+
+            {/* Guide tab */}
+            {introTab === "guide" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {t.tutorial.map((step, i) => (
+                  <div key={i} style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 10, padding: "12px 14px",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 16 }}>{step.icon}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#00ccff", letterSpacing: 2 }}>{step.title}</span>
+                    </div>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.7, margin: 0 }}>{step.body}</p>
+                    {step.visual && <TutorialVisual visual={step.visual} />}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -721,4 +841,70 @@ function StatPill({ label, value, color }) {
       {label} <span style={{ color, fontWeight: 700 }}>{value}</span>
     </div>
   );
+}
+
+function MiniTile({ value, golden }) {
+  const isNeg = value < 0;
+  const abs = Math.abs(value);
+  const colorMap = { 2: "#00ff88", 4: "#00ffcc", 8: "#00ccff", 16: "#3399ff", 32: "#6666ff", 64: "#9933ff", 128: "#cc33ff", 256: "#ff33cc", 512: "#ff3366", 1024: "#ff6600", 2048: "#ffcc00" };
+  const color = golden ? "#ffdd44" : isNeg ? "#ff5555" : (colorMap[abs] || "#ffffff");
+  return (
+    <div style={{
+      width: 38, height: 38,
+      background: isNeg ? "#2e1a1a" : "#1a1a2e",
+      borderRadius: 6,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: abs >= 1000 ? 9 : abs >= 100 ? 11 : 13,
+      fontWeight: 800, color,
+      border: golden ? "1px solid rgba(255,204,0,0.6)" : `1px solid ${color}44`,
+      boxShadow: golden ? "0 0 8px rgba(255,204,0,0.4)" : "none",
+      position: "relative", flexShrink: 0,
+    }}>
+      {value}
+      {golden && <div style={{ position: "absolute", top: 1, right: 3, fontSize: 7, color: "rgba(255,204,0,0.85)", fontWeight: 700 }}>×2</div>}
+    </div>
+  );
+}
+
+function TutorialVisual({ visual }) {
+  const sym = (text, col) => (
+    <span style={{ color: col || "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{text}</span>
+  );
+  const row = { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 };
+
+  if (visual.type === "merge") {
+    return (
+      <div style={row}>
+        <MiniTile value={visual.a} />
+        {sym("+")}
+        <MiniTile value={visual.b} />
+        {sym("→")}
+        <MiniTile value={visual.result} />
+      </div>
+    );
+  }
+  if (visual.type === "cancel") {
+    return (
+      <div style={row}>
+        <MiniTile value={visual.a} />
+        {sym("+")}
+        <MiniTile value={visual.b} />
+        {sym("→")}
+        <div style={{ width: 38, height: 38, border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.25)", fontSize: 18, flexShrink: 0 }}>✕</div>
+      </div>
+    );
+  }
+  if (visual.type === "golden") {
+    return (
+      <div style={row}>
+        <MiniTile value={4} golden />
+        {sym("+")}
+        <MiniTile value={4} />
+        {sym("→")}
+        <MiniTile value={8} />
+        <span style={{ fontSize: 9, color: "#ffcc00", background: "rgba(255,204,0,0.1)", border: "1px solid rgba(255,204,0,0.3)", padding: "2px 7px", borderRadius: 10, letterSpacing: 1, flexShrink: 0 }}>×2 GOLD</span>
+      </div>
+    );
+  }
+  return null;
 }
