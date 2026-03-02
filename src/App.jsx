@@ -3,6 +3,51 @@ import { useState, useEffect, useCallback, useRef } from "react";
 let tileId = 0;
 const nextId = () => ++tileId;
 
+const TRANSLATIONS = {
+  en: {
+    score: "SCORE", best: "BEST", gold: "GOLD",
+    shop: "SHOP", newGame: "NEW", langToggle: "中文",
+    level: "LEVEL", maxChaos: "— MAX CHAOS", danger: "— DANGER", rising: "— RISING",
+    shopTitle: "⚙ SHOP",
+    purchaseNote: "PURCHASES TAKE EFFECT IMMEDIATELY",
+    usedCount: (n) => `USED ${n}×`,
+    gameOver: "GAME OVER", youWin: "YOU WIN!",
+    scoreGold: (s, g) => `SCORE: ${s} · GOLD: ${g}`,
+    newGameBtn: "NEW GAME", keepGoing: "KEEP GOING",
+    lvl: "LVL", neg: "NEG", grid: "GRID",
+    hint: "ARROW KEYS / SWIPE TO PLAY",
+    shopItems: {
+      inc_neg:      { name: "Chaos+",   desc: "Increase negative odds by 5%" },
+      dec_neg:      { name: "Purify",   desc: "Decrease negative odds by 5%" },
+      gold_boost:   { name: "Alchemy",  desc: "Increase gold ratio by 5%" },
+      expand:       { name: "Expand",   desc: "Upgrade board to 4×4" },
+      golden_boost: { name: "Midas",    desc: "Increase ×2 gold tile odds by 2%" },
+      destroy:      { name: "Purge",    desc: "Destroy 3 random tiles (consumable)" },
+    },
+  },
+  zh: {
+    score: "得分", best: "最高", gold: "金币",
+    shop: "商店", newGame: "新局", langToggle: "EN",
+    level: "等级", maxChaos: "— 极度混乱", danger: "— 危险", rising: "— 升级中",
+    shopTitle: "⚙ 商店",
+    purchaseNote: "购买立即生效",
+    usedCount: (n) => `已用 ${n} 次`,
+    gameOver: "游戏结束", youWin: "你赢了！",
+    scoreGold: (s, g) => `得分: ${s} · 金币: ${g}`,
+    newGameBtn: "新游戏", keepGoing: "继续",
+    lvl: "等级", neg: "负片", grid: "棋盘",
+    hint: "方向键 / 滑动 操作",
+    shopItems: {
+      inc_neg:      { name: "混沌+", desc: "负数概率增加 5%" },
+      dec_neg:      { name: "净化",  desc: "负数概率降低 5%" },
+      gold_boost:   { name: "炼金",  desc: "金币倍率提升 5%" },
+      expand:       { name: "扩展",  desc: "棋盘升级为 4×4" },
+      golden_boost: { name: "点金",  desc: "×2 金色格概率提升 2%" },
+      destroy:      { name: "清除",  desc: "消灭 3 个随机格（消耗品）" },
+    },
+  },
+};
+
 const getTileStyle = (value) => {
   if (value === 0) return { bg: "transparent", text: "transparent", shadow: "none" };
   const isNeg = value < 0;
@@ -192,15 +237,16 @@ function destroyRandomTiles(grid, size, count) {
 }
 
 const SHOP_ITEMS = [
-  { id: "inc_neg", name: "Chaos+", desc: "Increase negative odds by 5%", icon: "☢", costs: [100, 200, 400], maxTier: 3, color: "#ff4444" },
-  { id: "dec_neg", name: "Purify", desc: "Decrease negative odds by 5%", icon: "✦", costs: [100, 200, 400], maxTier: 3, color: "#00ff88" },
-  { id: "gold_boost", name: "Alchemy", desc: "Increase gold ratio by 5%", icon: "⚗", costs: [100, 500, 1000], maxTier: 3, color: "#ffcc00" },
-  { id: "expand", name: "Expand", desc: "Upgrade board to 4×4", icon: "⬡", costs: [1000], maxTier: 1, color: "#00ccff" },
-  { id: "golden_boost", name: "Midas", desc: "Increase ×2 gold tile odds by 2%", icon: "👑", costs: [100, 200, 500], maxTier: 3, color: "#ffd700" },
-  { id: "destroy", name: "Purge", desc: "Destroy 3 random tiles (consumable)", icon: "💥", costs: [100, 200, 400], maxTier: Infinity, repeatable: true, color: "#ff6600" },
+  { id: "inc_neg",      icon: "☢", costs: [100, 200, 400],  maxTier: 3,        color: "#ff4444" },
+  { id: "dec_neg",      icon: "✦", costs: [100, 200, 400],  maxTier: 3,        color: "#00ff88" },
+  { id: "gold_boost",   icon: "⚗", costs: [100, 500, 1000], maxTier: 3,        color: "#ffcc00" },
+  { id: "expand",       icon: "⬡", costs: [1000],           maxTier: 1,        color: "#00ccff" },
+  { id: "golden_boost", icon: "👑", costs: [100, 200, 500],  maxTier: 3,        color: "#ffd700" },
+  { id: "destroy",      icon: "💥", costs: [100, 200, 400],  maxTier: Infinity, repeatable: true, color: "#ff6600" },
 ];
 
 export default function App() {
+  const [lang, setLang] = useState("en");
   const [gridSize, setGridSize] = useState(3);
   const [negChance, setNegChance] = useState(0.5);
   const [goldenChance, setGoldenChance] = useState(0.03);
@@ -216,6 +262,8 @@ export default function App() {
   const [purchaseCounts, setPurchaseCounts] = useState({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
   const [flashGold, setFlashGold] = useState(false);
   const touchStart = useRef(null);
+
+  const t = TRANSLATIONS[lang];
 
   const handleMove = useCallback((direction) => {
     if (gameOver || (won && !keepPlaying)) return;
@@ -321,6 +369,9 @@ export default function App() {
     return { canBuy: gold >= cost, cost, label: `${cost}g` };
   };
 
+  const lvl = getDifficultyLevel(score);
+  const lvlSuffix = lvl >= 4 ? t.maxChaos : lvl >= 3 ? t.danger : lvl >= 2 ? t.rising : "";
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -341,13 +392,14 @@ export default function App() {
       {/* Score / Gold bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 10, width: "min(95vw, 440px)", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <ScoreBox label="SCORE" value={score} color="#00ff88" />
-          <ScoreBox label="BEST" value={bestScore} color="#00ccff" />
-          <ScoreBox label="GOLD" value={gold} color="#ffcc00" flash={flashGold} />
+          <ScoreBox label={t.score} value={score} color="#00ff88" />
+          <ScoreBox label={t.best} value={bestScore} color="#00ccff" />
+          <ScoreBox label={t.gold} value={gold} color="#ffcc00" flash={flashGold} />
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <SmallBtn label="SHOP" onClick={() => setShopOpen(!shopOpen)} color="#ffcc00" active={shopOpen} />
-          <SmallBtn label="NEW" onClick={resetGame} color="#ff4444" />
+          <SmallBtn label={t.langToggle} onClick={() => setLang(l => l === "en" ? "zh" : "en")} color="#9966ff" />
+          <SmallBtn label={t.shop} onClick={() => setShopOpen(!shopOpen)} color="#ffcc00" active={shopOpen} />
+          <SmallBtn label={t.newGame} onClick={resetGame} color="#ff4444" />
         </div>
       </div>
 
@@ -355,12 +407,12 @@ export default function App() {
       {score > 0 && (
         <div style={{
           marginBottom: 8, padding: "4px 14px", borderRadius: 6,
-          background: getDifficultyLevel(score) >= 3 ? "rgba(255,68,68,0.08)" : "rgba(255,204,0,0.08)",
-          border: `1px solid ${getDifficultyLevel(score) >= 3 ? "rgba(255,68,68,0.2)" : "rgba(255,204,0,0.2)"}`,
-          color: getDifficultyLevel(score) >= 3 ? "#ff4444" : "#ffcc00",
+          background: lvl >= 3 ? "rgba(255,68,68,0.08)" : "rgba(255,204,0,0.08)",
+          border: `1px solid ${lvl >= 3 ? "rgba(255,68,68,0.2)" : "rgba(255,204,0,0.2)"}`,
+          color: lvl >= 3 ? "#ff4444" : "#ffcc00",
           fontSize: 10, letterSpacing: 2,
         }}>
-          ⚡ LEVEL {getDifficultyLevel(score)} {getDifficultyLevel(score) >= 4 ? "— MAX CHAOS" : getDifficultyLevel(score) >= 3 ? "— DANGER" : getDifficultyLevel(score) >= 2 ? "— RISING" : ""}
+          ⚡ {t.level} {lvl} {lvlSuffix}
         </div>
       )}
 
@@ -372,11 +424,12 @@ export default function App() {
           border: "1px solid rgba(255,204,0,0.15)", padding: "12px",
           animation: "fadeIn 0.2s ease-out",
         }}>
-          <div style={{ fontSize: 11, color: "#ffcc00", letterSpacing: 3, marginBottom: 10, textAlign: "center", textTransform: "uppercase" }}>⚙ Shop</div>
+          <div style={{ fontSize: 11, color: "#ffcc00", letterSpacing: 3, marginBottom: 10, textAlign: "center", textTransform: "uppercase" }}>{t.shopTitle}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {SHOP_ITEMS.map(item => {
               const status = getItemStatus(item);
               const count = purchaseCounts[item.id];
+              const itemText = t.shopItems[item.id];
               return (
                 <div key={item.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
@@ -387,8 +440,8 @@ export default function App() {
                 }}>
                   <div style={{ fontSize: 20, width: 30, textAlign: "center" }}>{item.icon}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: item.color, letterSpacing: 1 }}>{item.name}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{item.desc}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: item.color, letterSpacing: 1 }}>{itemText.name}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{itemText.desc}</div>
                     {item.maxTier > 1 && !item.repeatable && (
                       <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
                         {Array(item.maxTier).fill(0).map((_, i) => (
@@ -401,7 +454,7 @@ export default function App() {
                       </div>
                     )}
                     {item.repeatable && count > 0 && (
-                      <div style={{ fontSize: 9, color: `${item.color}88`, marginTop: 3, letterSpacing: 1 }}>USED {count}×</div>
+                      <div style={{ fontSize: 9, color: `${item.color}88`, marginTop: 3, letterSpacing: 1 }}>{t.usedCount(count)}</div>
                     )}
                   </div>
                   <button
@@ -424,7 +477,7 @@ export default function App() {
             })}
           </div>
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 8, letterSpacing: 1 }}>
-            PURCHASES TAKE EFFECT IMMEDIATELY
+            {t.purchaseNote}
           </div>
         </div>
       )}
@@ -497,12 +550,12 @@ export default function App() {
             animation: "fadeIn 0.3s ease-out",
           }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: gameOver ? "#ff4444" : "#00ff88", textShadow: `0 0 30px ${gameOver ? "rgba(255,68,68,0.6)" : "rgba(0,255,136,0.6)"}`, letterSpacing: 4 }}>
-              {gameOver ? "GAME OVER" : "YOU WIN!"}
+              {gameOver ? t.gameOver : t.youWin}
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: 2 }}>SCORE: {score} · GOLD: {gold}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: 2 }}>{t.scoreGold(score, gold)}</div>
             <div style={{ display: "flex", gap: 10 }}>
-              <OverlayButton label="NEW GAME" onClick={resetGame} color={gameOver ? "#ff4444" : "#00ff88"} />
-              {won && <OverlayButton label="KEEP GOING" onClick={() => { setKeepPlaying(true); setWon(false); }} color="#00ccff" />}
+              <OverlayButton label={t.newGameBtn} onClick={resetGame} color={gameOver ? "#ff4444" : "#00ff88"} />
+              {won && <OverlayButton label={t.keepGoing} onClick={() => { setKeepPlaying(true); setWon(false); }} color="#00ccff" />}
             </div>
           </div>
         )}
@@ -510,15 +563,15 @@ export default function App() {
 
       {/* Stats bar */}
       <div style={{ marginTop: 10, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-        <StatPill label="LVL" value={getDifficultyLevel(score)} color={getDifficultyLevel(score) >= 3 ? "#ff4444" : "#ffcc00"} />
-        <StatPill label="NEG" value={`${Math.round(negChance * 100)}%`} color="#ff4444" />
-        <StatPill label="GRID" value={`${gridSize}×${gridSize}`} color="#00ccff" />
+        <StatPill label={t.lvl} value={lvl} color={lvl >= 3 ? "#ff4444" : "#ffcc00"} />
+        <StatPill label={t.neg} value={`${Math.round(negChance * 100)}%`} color="#ff4444" />
+        <StatPill label={t.grid} value={`${gridSize}×${gridSize}`} color="#00ccff" />
         <StatPill label="×2" value={`${Math.round(goldenChance * 100)}%`} color="#ffd700" />
-        <StatPill label="GOLD×" value={`${goldMultiplier.toFixed(2)}`} color="#ffcc00" />
+        <StatPill label={t.gold + "×"} value={`${goldMultiplier.toFixed(2)}`} color="#ffcc00" />
       </div>
 
       <div style={{ marginTop: 8, color: "rgba(255,255,255,0.2)", fontSize: 10, letterSpacing: 2, textAlign: "center", lineHeight: 1.6 }}>
-        ARROW KEYS / SWIPE TO PLAY
+        {t.hint}
       </div>
 
       <style>{`
