@@ -656,8 +656,11 @@ export default function App() {
           width: "min(90vw, 420px)", aspectRatio: "1",
           background: "rgba(15,15,25,0.9)", borderRadius: 12,
           padding: "clamp(6px, 2vw, 12px)",
-          border: "1px solid rgba(0,255,136,0.15)",
-          boxShadow: "0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3)",
+          border: nearDeath ? "1px solid rgba(255,50,50,0.6)" : "1px solid rgba(0,255,136,0.15)",
+          boxShadow: nearDeath
+            ? "0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3), 0 0 30px rgba(255,40,40,0.25)"
+            : "0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3)",
+          animation: nearDeath ? "boardDanger 0.7s ease-in-out infinite" : "none",
           touchAction: "none",
         }}
       >
@@ -742,14 +745,21 @@ export default function App() {
       {/* Near-death warning */}
       {nearDeath && (
         <div style={{
-          marginTop: 10, padding: "6px 20px", borderRadius: 6,
-          background: "rgba(255,40,40,0.07)",
-          border: "1px solid rgba(255,40,40,0.35)",
-          color: "#ff4444", fontSize: 10, letterSpacing: 3,
-          animation: "dangerPulse 0.9s ease-in-out infinite",
+          marginTop: 10,
+          width: "min(90vw, 420px)",
+          padding: "10px 0",
+          borderRadius: 8,
+          background: "rgba(255,30,30,0.12)",
+          border: "1px solid rgba(255,50,50,0.55)",
+          color: "#ff3333",
+          fontSize: 13, fontWeight: 800, letterSpacing: 4,
           textAlign: "center",
+          boxShadow: "0 0 24px rgba(255,40,40,0.25), inset 0 0 20px rgba(255,0,0,0.06)",
+          animation: "dangerPulse 0.7s ease-in-out infinite",
+          textTransform: "uppercase",
+          textShadow: "0 0 12px rgba(255,60,60,0.8)",
         }}>
-          ⚠ {lang === "zh" ? "最后一步 — 无路可逃" : "LAST MOVE — NO ESCAPE"}
+          ☠ {lang === "zh" ? "无路可逃 — 最后一步" : "NO ESCAPE — LAST MOVE"}
         </div>
       )}
 
@@ -891,8 +901,12 @@ export default function App() {
           50% { box-shadow: 0 0 18px rgba(255,204,0,0.6), 0 0 35px rgba(255,204,0,0.25), inset 0 0 12px rgba(255,204,0,0.2); }
         }
         @keyframes dangerPulse {
-          0%, 100% { opacity: 1; border-color: rgba(255,40,40,0.35); box-shadow: 0 0 8px rgba(255,40,40,0.2); }
-          50%       { opacity: 0.55; border-color: rgba(255,40,40,0.7); box-shadow: 0 0 16px rgba(255,40,40,0.5); }
+          0%, 100% { opacity: 1;    box-shadow: 0 0 24px rgba(255,40,40,0.25), inset 0 0 20px rgba(255,0,0,0.06); }
+          50%       { opacity: 0.4; box-shadow: 0 0 40px rgba(255,40,40,0.6), inset 0 0 20px rgba(255,0,0,0.12); }
+        }
+        @keyframes boardDanger {
+          0%, 100% { box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3), 0 0 20px rgba(255,40,40,0.15); border-color: rgba(255,50,50,0.4); }
+          50%       { box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.3), 0 0 45px rgba(255,40,40,0.5); border-color: rgba(255,50,50,0.9); }
         }
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
         @keyframes glitch { 0%, 90%, 100% { opacity: 1; transform: translateX(0); } 92% { opacity: 0.8; transform: translateX(-2px); } 94% { opacity: 0.6; transform: translateX(2px); } 96% { opacity: 0.8; transform: translateX(-1px); } 98% { opacity: 1; transform: translateX(1px); } }
