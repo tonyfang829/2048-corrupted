@@ -338,6 +338,34 @@ function hasWon(grid, size) {
   return false;
 }
 
+// Returns true when every valid move leaves the board in a state
+// where a spawning tile will result in no remaining moves.
+function willDieNextMove(grid, size) {
+  for (const dir of ["left", "right", "up", "down"]) {
+    const { moved, grid: ng } = moveGrid(grid, dir, size);
+    if (!moved) continue;
+    const empties = getEmptyCells(ng, size);
+    if (empties.length >= 2) return false; // plenty of room after this move
+    if (empties.length === 1) {
+      // After spawn the board is full — check if any adjacent merges survive
+      let hasMerge = false;
+      outer: for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (!ng[r][c]) continue;
+          const v = ng[r][c].value;
+          if (c + 1 < size && ng[r][c+1] && (ng[r][c+1].value === v || ng[r][c+1].value === -v)) { hasMerge = true; break outer; }
+          if (r + 1 < size && ng[r+1][c] && (ng[r+1][c].value === v || ng[r+1][c].value === -v)) { hasMerge = true; break outer; }
+        }
+      }
+      if (hasMerge) return false;
+    } else {
+      // 0 empty cells after move — only safe if merges still exist
+      if (canMove(ng, size)) return false;
+    }
+  }
+  return true; // no direction leads to survival
+}
+
 function destroyRandomTiles(grid, size, count) {
   const occupied = [];
   for (let r = 0; r < size; r++)
@@ -506,6 +534,7 @@ export default function App() {
 
   const lvl = getDifficultyLevel(score);
   const lvlSuffix = lvl >= 4 ? t.maxChaos : lvl >= 3 ? t.danger : lvl >= 2 ? t.rising : "";
+  const nearDeath = !gameOver && !(won && !keepPlaying) && willDieNextMove(grid, gridSize);
 
   return (
     <div style={{
@@ -710,6 +739,20 @@ export default function App() {
         )}
       </div>
 
+      {/* Near-death warning */}
+      {nearDeath && (
+        <div style={{
+          marginTop: 10, padding: "6px 20px", borderRadius: 6,
+          background: "rgba(255,40,40,0.07)",
+          border: "1px solid rgba(255,40,40,0.35)",
+          color: "#ff4444", fontSize: 10, letterSpacing: 3,
+          animation: "dangerPulse 0.9s ease-in-out infinite",
+          textAlign: "center",
+        }}>
+          ⚠ {lang === "zh" ? "最后一步 — 无路可逃" : "LAST MOVE — NO ESCAPE"}
+        </div>
+      )}
+
       {/* Stats bar */}
       <div style={{ marginTop: 10, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
         <StatPill label={t.lvl} value={lvl} color={lvl >= 3 ? "#ff4444" : "#ffcc00"} />
@@ -846,6 +889,10 @@ export default function App() {
         @keyframes goldenPulse {
           0%, 100% { box-shadow: 0 0 12px rgba(255,204,0,0.4), 0 0 25px rgba(255,204,0,0.15), inset 0 0 8px rgba(255,204,0,0.1); }
           50% { box-shadow: 0 0 18px rgba(255,204,0,0.6), 0 0 35px rgba(255,204,0,0.25), inset 0 0 12px rgba(255,204,0,0.2); }
+        }
+        @keyframes dangerPulse {
+          0%, 100% { opacity: 1; border-color: rgba(255,40,40,0.35); box-shadow: 0 0 8px rgba(255,40,40,0.2); }
+          50%       { opacity: 0.55; border-color: rgba(255,40,40,0.7); box-shadow: 0 0 16px rgba(255,40,40,0.5); }
         }
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
         @keyframes glitch { 0%, 90%, 100% { opacity: 1; transform: translateX(0); } 92% { opacity: 0.8; transform: translateX(-2px); } 94% { opacity: 0.6; transform: translateX(2px); } 96% { opacity: 0.8; transform: translateX(-1px); } 98% { opacity: 1; transform: translateX(1px); } }
