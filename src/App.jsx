@@ -377,6 +377,7 @@ export default function App() {
   const [introTab, setIntroTab] = useState("story");
   const [purchaseCounts, setPurchaseCounts] = useState({ inc_neg: 0, dec_neg: 0, gold_boost: 0, expand: 0, golden_boost: 0, destroy: 0 });
   const [flashGold, setFlashGold] = useState(false);
+  const [cancelFlashes, setCancelFlashes] = useState([]);
   const touchStart = useRef(null);
 
   const t = TRANSLATIONS[lang];
@@ -386,6 +387,24 @@ export default function App() {
 
     const { grid: newGrid, scoreGained, goldenScoreGained, moved } = moveGrid(grid, direction, gridSize);
     if (!moved) return;
+
+    // Detect cancelled tiles (positive+negative annihilation)
+    const prevIds = new Map();
+    for (let r = 0; r < gridSize; r++)
+      for (let c = 0; c < gridSize; c++)
+        if (grid[r][c]) prevIds.set(grid[r][c].id, { r, c });
+    const survivingIds = new Set();
+    for (let r = 0; r < gridSize; r++)
+      for (let c = 0; c < gridSize; c++) {
+        const t = newGrid[r][c];
+        if (t) { survivingIds.add(t.id); if (t.mergedFrom) t.mergedFrom.forEach(s => survivingIds.add(s.id)); }
+      }
+    const cancelled = [];
+    for (const [id, pos] of prevIds) if (!survivingIds.has(id)) cancelled.push(pos);
+    if (cancelled.length > 0) {
+      setCancelFlashes(cancelled.map((p, i) => ({ ...p, key: Date.now() + i })));
+      setTimeout(() => setCancelFlashes([]), 650);
+    }
 
     const newScore = score + scoreGained;
     const baseGold = Math.ceil(scoreGained * goldMultiplier);
@@ -628,7 +647,18 @@ export default function App() {
           gap: "clamp(4px, 1.5vw, 8px)",
         }}>
           {grid.flat().map((tile, idx) => {
-            if (!tile) return <div key={`e-${idx}`} />;
+            if (!tile) {
+              const r = Math.floor(idx / gridSize);
+              const c = idx % gridSize;
+              const flash = cancelFlashes.find(f => f.r === r && f.c === c);
+              if (flash) return (
+                <div key={`cflash-${flash.key}`} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ position: "absolute", width: "88%", height: "88%", borderRadius: 8, background: "radial-gradient(circle at center, rgba(255,200,50,0.95) 0%, rgba(255,100,0,0.7) 45%, transparent 80%)", boxShadow: "0 0 20px rgba(255,140,0,0.8), 0 0 8px rgba(255,230,0,0.9)", animation: "cancelBurst 0.6s ease-out forwards" }} />
+                  <div style={{ position: "absolute", width: "72%", height: "72%", borderRadius: "50%", border: "2px solid rgba(255,230,60,0.9)", boxShadow: "0 0 10px rgba(255,200,50,0.6)", animation: "cancelRing 0.65s ease-out forwards" }} />
+                </div>
+              );
+              return <div key={`e-${idx}`} />;
+            }
             const style = getTileStyle(tile.value);
             const isNeg = tile.value < 0;
             const isGolden = tile.golden;
@@ -642,7 +672,9 @@ export default function App() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize, fontWeight: 800, color: isGolden ? "#ffdd44" : style.text,
                 boxShadow: goldenShadow, border: goldenBorder,
-                animation: tile.isNew ? "popIn 0.3s ease-out, borderGlow 0.8s ease-out" : tile.mergedFrom ? "merge 0.2s ease-out" : isGolden ? "goldenPulse 2s ease-in-out infinite" : "none",
+                animation: tile.isNew ? "popIn 0.3s ease-out, borderGlow 0.8s ease-out"
+                  : tile.mergedFrom ? (tile.value > 0 ? "mergeBurst 0.35s cubic-bezier(0.22, 0.61, 0.36, 1)" : "mergeNeg 0.3s ease-out")
+                  : isGolden ? "goldenPulse 2s ease-in-out infinite" : "none",
                 position: "relative", overflow: "hidden", userSelect: "none",
               }}>
                 {tile.value}
@@ -790,6 +822,27 @@ export default function App() {
           100% { box-shadow: none; border-color: rgba(255,255,255,0.1); }
         }
         @keyframes merge { 0% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes mergeBurst {
+          0%   { transform: scale(0.72); filter: brightness(2.6); }
+          45%  { transform: scale(1.30); filter: brightness(1.7); }
+          75%  { transform: scale(0.96); filter: brightness(1.1); }
+          100% { transform: scale(1);   filter: brightness(1); }
+        }
+        @keyframes mergeNeg {
+          0%   { transform: scale(0.72); filter: brightness(2.2) hue-rotate(300deg); }
+          45%  { transform: scale(1.24); filter: brightness(1.5); }
+          100% { transform: scale(1);   filter: brightness(1); }
+        }
+        @keyframes cancelBurst {
+          0%   { transform: scale(0.15); opacity: 1; }
+          50%  { transform: scale(1.05); opacity: 0.9; }
+          100% { transform: scale(1.8);  opacity: 0; }
+        }
+        @keyframes cancelRing {
+          0%   { transform: scale(0.1);  opacity: 0.95; }
+          55%  { transform: scale(1.2);  opacity: 0.75; }
+          100% { transform: scale(2.4);  opacity: 0; }
+        }
         @keyframes goldenPulse {
           0%, 100% { box-shadow: 0 0 12px rgba(255,204,0,0.4), 0 0 25px rgba(255,204,0,0.15), inset 0 0 8px rgba(255,204,0,0.1); }
           50% { box-shadow: 0 0 18px rgba(255,204,0,0.6), 0 0 35px rgba(255,204,0,0.25), inset 0 0 12px rgba(255,204,0,0.2); }
